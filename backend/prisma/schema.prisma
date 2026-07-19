@@ -1,0 +1,225 @@
+// Meeting Copilot — Prisma Schema
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// ─────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  avatarUrl    String?
+  provider     String   @default("google") // "google" | "email"
+  providerId   String?  // Google OAuth sub
+  passwordHash String?  // only if provider = "email"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // relations
+  hostedMeetings   Meeting[]        @relation("host")
+  participations   Participant[]
+  actionItemsOwned ActionItem[]     @relation("assignee")
+  refreshTokens    RefreshToken[]
+
+  @@index([email])
+  @@index([providerId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────
+// MEETINGS
+// ─────────────────────────────────────────
+
+model Meeting {
+  id          String        @id @default(cuid())
+  roomCode    String        @unique // short code shared with participants e.g. "XK9-PLM"
+  title       String        @default("Untitled Meeting")
+  hostId      String
+  status      MeetingStatus @default(WAITING)
+  startedAt   DateTime?
+  endedAt     DateTime?
+  durationSec Int?          // computed on end
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // AI outputs (stored after meeting ends)
+  finalSummary   String? // full markdown summary from GPT-4
+  keyDecisions   String[] // array of decision strings
+  openQuestions  String[]
+  embeddingId    String?  // Pinecone vector ID for semantic search
+
+  // relations
+  host         User          @relation("host", fields: [hostId], references: [id])
+  participants Participant[]
+  transcripts  Transcript[]
+  actionItems  ActionItem[]
+  jobs         ProcessingJob[]
+
+  @@index([hostId])
+  @@index([roomCode])
+  @@index([status])
+}
+
+enum MeetingStatus {
+  WAITING    // room created, not started
+  ACTIVE     // live right now
+  PROCESSING // ended, AI jobs running
+  DONE       // fully processed
+  FAILED     // processing error
+}
+
+model Participant {
+  id        String   @id @default(cuid())
+  meetingId String
+  userId    String
+  joinedAt  DateTime @default(now())
+  leftAt    DateTime?
+  isMuted   Boolean  @default(false)
+  role      Role     @default(PARTICIPANT)
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([meetingId, userId]) // one row per user per meeting
+  @@index([meetingId])
+  @@index([userId])
+}
+
+enum Role {
+  HOST
+  PARTICIPANT
+}
+
+// ─────────────────────────────────────────
+// TRANSCRIPTS
+// ─────────────────────────────────────────
+
+model Transcript {
+  id          String   @id @default(cuid())
+  meetingId   String
+  speakerName String   // display name at time of speaking
+  speakerId   String?  // userId if authenticated
+  text        String   // raw transcribed text for this chunk
+  startSec    Float    // seconds since meeting startedAt
+  endSec      Float
+  confidence  Float?   // Whisper confidence score 0-1
+  isFinal     Boolean  @default(false) // false = streaming partial
+  createdAt   DateTime @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+  @@index([meetingId, startSec]) // for chronological playback queries
+}
+
+// ─────────────────────────────────────────
+// AI SUMMARIES (rolling — one per interval)
+// ─────────────────────────────────────────
+
+model RollingSummary {
+  id          String   @id @default(cuid())
+  meetingId   String
+  intervalMin Int      // which 2-minute window: 1, 2, 3 ...
+  content     String   // GPT-4 summary text for that window
+  promptTokens  Int?
+  outputTokens  Int?
+  createdAt   DateTime @default(now())
+
+  @@index([meetingId])
+  @@index([meetingId, intervalMin])
+}
+
+// ─────────────────────────────────────────
+// ACTION ITEMS
+// ─────────────────────────────────────────
+
+model ActionItem {
+  id          String           @id @default(cuid())
+  meetingId   String
+  assigneeId  String?          // nullable — may not be a platform user
+  assigneeName String?         // raw name from transcript
+  title       String
+  description String?
+  priority    Priority         @default(MEDIUM)
+  status      ActionItemStatus @default(PENDING)
+  dueDate     DateTime?
+  transcriptRef Float?         // startSec in transcript where this was mentioned
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  meeting  Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  assignee User?   @relation("assignee", fields: [assigneeId], references: [id])
+
+  @@index([meetingId])
+  @@index([assigneeId])
+  @@index([status])
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ActionItemStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+// ─────────────────────────────────────────
+// ASYNC JOBS (Bull queue mirror)
+// ─────────────────────────────────────────
+
+model ProcessingJob {
+  id          String    @id @default(cuid())
+  meetingId   String
+  type        JobType
+  status      JobStatus @default(QUEUED)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  error       String?   // last error message if FAILED
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+  @@index([status])
+}
+
+enum JobType {
+  FINAL_SUMMARY       // GPT-4 full meeting summary
+  ACTION_ITEM_EXTRACT // GPT-4 action item extraction
+  EMBED_TRANSCRIPT    // OpenAI embeddings → Pinecone
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
