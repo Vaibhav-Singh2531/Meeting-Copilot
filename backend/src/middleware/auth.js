@@ -5,6 +5,7 @@ const JWT_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 's
 
 export const protect = (req, res, next) => {
   try {
+    console.log('VERIFYING WITH:', JWT_SECRET)
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -18,7 +19,7 @@ export const protect = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    
+
     // Attach the userId to the request object so subsequent routes can use it
     req.userId = decoded.userId;
 

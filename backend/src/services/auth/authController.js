@@ -10,7 +10,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 // Ensure these are set in your .env file
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
+const JWT_SECRET = process.env.JWT_ACCESS_SECRET || 'supersecret';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'superrefreshsecret';
 
 const oauth2Client = new OAuth2Client(
@@ -104,7 +104,7 @@ export const googleCallback = async (req, res) => {
       idToken: tokens.id_token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-    
+
     const payload = ticket.getPayload();
     const { email, name, picture: avatarUrl, sub: providerId } = payload;
 

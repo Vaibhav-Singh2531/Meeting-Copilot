@@ -1,15 +1,10 @@
 import React from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  // Protect the route
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
 
   const handleLogout = async () => {
     await logout();
