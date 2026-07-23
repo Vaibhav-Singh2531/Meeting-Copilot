@@ -1,12 +1,16 @@
 import 'dotenv/config';
 import express from 'express';
+import http from 'http';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import authRoutes from './src/services/auth/authRoutes.js';
 import meetingRoutes from './src/services/meeting/meetingRoutes.js';
+import { initSocket } from './src/socket/index.js';
 
 const app = express();
 const PORT = 5000;
+
+const server = http.createServer(app);
 
 // Middleware
 app.use(cors({
@@ -24,6 +28,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.listen(PORT, () => {
+// Initialize WebSockets
+initSocket(server);
+
+server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
