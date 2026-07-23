@@ -1,54 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
+import useSocket from '../hooks/useSocket';
 
 export default function Room() {
   const { roomCode } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
-  const [socket, setSocket] = useState(null);
-
-  useEffect(() => {
-    // Connect to Socket.io backend
-    const newSocket = io('http://localhost:5000', {
-      withCredentials: true,
-    });
-
-    setSocket(newSocket);
-
-    // Tell server we joined
-    newSocket.emit('join-room', {
-      roomCode,
-      userId: user.id,
-      userName: user.name,
-    });
-
-    // Handle incoming participant lists
-    newSocket.on('room-users', (currentUsers) => {
-      setUsers(currentUsers);
-    });
-
-    // Handle new participant joining
-    newSocket.on('user-joined', (newUser) => {
-      setUsers((prev) => {
-        if (prev.find(u => u.userId === newUser.userId)) return prev;
-        return [...prev, newUser];
-      });
-    });
-
-    // Handle participant leaving
-    newSocket.on('user-left', ({ userId }) => {
-      setUsers((prev) => prev.filter((u) => u.userId !== userId));
-    });
-
-    // Cleanup when component unmounts (e.g. user closes tab or clicks back)
-    return () => {
-      newSocket.emit('leave-room', { roomCode, userId: user.id });
-      newSocket.disconnect();
-    };
-  }, [roomCode, user.id, user.name]);
+  
+  const { users, socket } = useSocket({ roomCode, user });
 
   const handleLeave = () => {
     if (socket) {
