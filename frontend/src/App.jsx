@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
+import CreateMeeting from './pages/CreateMeeting';
+import Room from './pages/Room';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -15,6 +17,22 @@ function App() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/create" 
+        element={
+          <ProtectedRoute>
+            <CreateMeeting />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/room/:roomCode" 
+        element={
+          <ProtectedRoute>
+            <Room />
           </ProtectedRoute>
         } 
       />
