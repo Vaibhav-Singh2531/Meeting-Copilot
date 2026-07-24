@@ -15,7 +15,6 @@ export default function useAudioCapture({ socket, roomCode, user }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Safely default to audio/webm if supported
       const options = MediaRecorder.isTypeSupported('audio/webm')
         ? { mimeType: 'audio/webm' }
         : undefined;
@@ -23,32 +22,42 @@ export default function useAudioCapture({ socket, roomCode, user }) {
       const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
-          const reader = new FileReader();
-          
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              // reader.result format: "data:audio/webm;base64,GkXf..."
-              const base64String = reader.result.split(',')[1];
-              
-              if (base64String && socket) {
-                socket.emit('audio-chunk', {
-                  roomCode,
-                  audioChunk: base64String,
-                  userId: user.id,
-                  userName: user.name,
-                  startSec: Date.now() / 1000,
-                });
-              }
-            }
-          };
+      let headerChunk = null  // ← add this
+      let isFirstChunk = true // ← add this
 
-          reader.readAsDataURL(e.data);
+      mediaRecorder.ondataavailable = (e) => {
+        if (!e.data || e.data.size === 0) return;
+
+        // ← save first chunk as header
+        if (isFirstChunk) {
+          headerChunk = e.data
+          isFirstChunk = false
         }
+
+        // ← prepend header to every chunk to make it valid webm
+        const validBlob = headerChunk
+          ? new Blob([headerChunk, e.data], { type: 'audio/webm' })
+          : new Blob([e.data], { type: 'audio/webm' })
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            const base64String = reader.result.split(',')[1];
+            if (base64String && socket) {
+              socket.emit('audio-chunk', {
+                roomCode,
+                audioChunk: base64String,
+                userId: user.id,
+                userName: user.name,
+                startSec: Date.now() / 1000,
+              });
+            }
+          }
+        };
+        reader.readAsDataURL(validBlob);
       };
 
-      mediaRecorder.start(3000); // 3-second chunks
+      mediaRecorder.start(3000);
       setIsRecording(true);
     } catch (error) {
       console.error('Error starting audio recording:', error);
@@ -59,7 +68,7 @@ export default function useAudioCapture({ socket, roomCode, user }) {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
-    
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
     }
