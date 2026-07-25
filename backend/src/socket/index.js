@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import roomHandler from './handlers/roomHandler.js';
 import audioHandler from './handlers/audioHandler.js';
+import summaryHandler from './handlers/summaryHandler.js';
 
 export const initSocket = (server) => {
   const io = new Server(server, {
@@ -15,6 +16,7 @@ export const initSocket = (server) => {
 
     roomHandler(io, socket);
     audioHandler(io, socket);
+    summaryHandler(io, socket);
 
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.id}`);

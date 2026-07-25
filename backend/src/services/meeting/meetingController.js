@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
+import { generateFinalSummary } from '../ai/summaryService.js';
 
 const { Pool } = pg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -100,13 +101,48 @@ export const endMeeting = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to end this meeting' });
     }
 
-    const updatedMeeting = await prisma.meeting.update({
+    let updatedMeeting = await prisma.meeting.update({
       where: { id: meeting.id },
       data: {
         status: 'PROCESSING',
         endedAt: new Date()
       }
     });
+
+    const transcripts = await prisma.transcript.findMany({
+      where: { meetingId: meeting.id },
+      select: { speakerName: true, text: true },
+      orderBy: { startSec: 'asc' }
+    });
+
+    const fullTranscript = transcripts
+      .map((t) => `${t.speakerName}: ${t.text}`)
+      .join('\n');
+
+    if (!fullTranscript || fullTranscript.trim().length === 0) {
+      updatedMeeting = await prisma.meeting.update({
+        where: { id: meeting.id },
+        data: { status: 'DONE' }
+      });
+      return res.json(updatedMeeting);
+    }
+
+    try {
+      const finalSummary = await generateFinalSummary(fullTranscript);
+      updatedMeeting = await prisma.meeting.update({
+        where: { id: meeting.id },
+        data: {
+          finalSummary,
+          status: 'DONE'
+        }
+      });
+    } catch (summaryError) {
+      console.error('Error generating final summary:', summaryError);
+      updatedMeeting = await prisma.meeting.update({
+        where: { id: meeting.id },
+        data: { status: 'DONE' }
+      });
+    }
 
     res.json(updatedMeeting);
   } catch (error) {
