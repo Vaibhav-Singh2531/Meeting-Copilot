@@ -5,8 +5,7 @@ const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 export async function streamRollingSummary(transcript, onChunk) {
   try {
-    const prompt = `You are a meeting assistant. Based on the following transcript, write a concise 3-5 sentence summary of what has been discussed so far. Focus on key points and decisions. Transcript: ${transcript}`;
-
+    const prompt = `You are a meeting assistant. Summarise only this portion of the meeting transcript in 3-5 sentences. Focus only on what was discussed in this specific segment, not the entire meeting. Be concise and clear. Transcript segment: ${transcript}`;
     const result = await model.generateContentStream(prompt);
 
     for await (const chunk of result.stream) {
