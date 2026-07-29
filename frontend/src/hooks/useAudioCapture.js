@@ -2,89 +2,111 @@ import { useState, useRef, useEffect } from 'react';
 
 export default function useAudioCapture({ socket, roomCode, user }) {
   const [isRecording, setIsRecording] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
 
-  const startRecording = async () => {
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReady = () => {
+      setIsReady(true);
+      startMicCapture();
+    };
+
+    socket.on('transcription-ready', handleReady);
+
+    return () => {
+      socket.off('transcription-ready', handleReady);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
+
+  const startMicCapture = async () => {
     try {
-      if (!socket || !roomCode || !user) {
-        console.warn('Socket, roomCode, or user is missing. Cannot start recording.');
-        return;
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
+      console.log('Mic permission granted')
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+      const audioContext = new AudioContext({ sampleRate: 16000 })
+      const source = audioContext.createMediaStreamSource(stream)
+      const processor = audioContext.createScriptProcessor(4096, 1, 1)
 
-      const options = MediaRecorder.isTypeSupported('audio/webm')
-        ? { mimeType: 'audio/webm' }
-        : undefined;
+      processor.onaudioprocess = (e) => {
+        const inputData = e.inputBuffer.getChannelData(0)
 
-      const mediaRecorder = new MediaRecorder(stream, options);
-      mediaRecorderRef.current = mediaRecorder;
-
-      let headerChunk = null  // ← add this
-      let isFirstChunk = true // ← add this
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (!e.data || e.data.size === 0) return;
-
-        // ← save first chunk as header
-        if (isFirstChunk) {
-          headerChunk = e.data
-          isFirstChunk = false
+        // Convert Float32 to Int16 PCM
+        const pcm = new Int16Array(inputData.length)
+        for (let i = 0; i < inputData.length; i++) {
+          pcm[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768))
         }
 
-        // ← prepend header to every chunk to make it valid webm
-        const validBlob = headerChunk
-          ? new Blob([headerChunk, e.data], { type: 'audio/webm' })
-          : new Blob([e.data], { type: 'audio/webm' })
+        // Convert to base64
+        const uint8 = new Uint8Array(pcm.buffer)
+        let binary = ''
+        uint8.forEach(b => binary += String.fromCharCode(b))
+        const base64 = btoa(binary)
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === 'string') {
-            const base64String = reader.result.split(',')[1];
-            if (base64String && socket) {
-              socket.emit('audio-chunk', {
-                roomCode,
-                audioChunk: base64String,
-                userId: user.id,
-                userName: user.name,
-                startSec: Date.now() / 1000,
-              });
-            }
-          }
-        };
-        reader.readAsDataURL(validBlob);
-      };
+        console.log('Sending PCM chunk, size:', uint8.length, 'bytes')
 
-      mediaRecorder.start(3000);
-      setIsRecording(true);
+        if (socket) {
+          socket.emit('audio-chunk', { audioChunk: base64 })
+        }
+      }
+
+      source.connect(processor)
+      processor.connect(audioContext.destination)
+
+      // Store cleanup function in ref instead of MediaRecorder
+      mediaRecorderRef.current = {
+        stop: () => {
+          processor.disconnect()
+          source.disconnect()
+          audioContext.close()
+          stream.getTracks().forEach(t => t.stop())
+        },
+        state: 'recording'
+      }
+
+      setIsRecording(true)
     } catch (error) {
-      console.error('Error starting audio recording:', error);
+      console.error('Error accessing microphone:', error)
+      setIsReady(false)
     }
+  }
+
+  const startRecording = () => {
+    if (!socket || !roomCode || !user) return;
+    socket.emit('start-transcription', { roomCode, userId: user.id, userName: user.name });
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop()
+      mediaRecorderRef.current = null
     }
 
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
     }
 
-    setIsRecording(false);
-  };
+    if (socket) {
+      socket.emit('stop-transcription')
+    }
 
-  // Cleanup on unmount
+    setIsRecording(false)
+    setIsReady(false)
+  }
+
   useEffect(() => {
     return () => {
-      stopRecording();
+      if (isRecording) {
+        stopRecording();
+      }
     };
-    // We intentionally omit dependencies so this acts as a pure unmount cleanup
-    // using the refs directly inside stopRecording.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isRecording]);
 
-  return { isRecording, startRecording, stopRecording };
+  return { isRecording, isReady, startRecording, stopRecording };
 }

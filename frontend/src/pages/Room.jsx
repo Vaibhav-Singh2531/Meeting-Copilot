@@ -10,19 +10,38 @@ export default function Room() {
   const navigate = useNavigate();
 
   const { users, socket, isConnected } = useSocket({ roomCode, user });
-  const { isRecording, startRecording, stopRecording } = useAudioCapture({ socket, roomCode, user });
+  const { isRecording, isReady, startRecording, stopRecording } = useAudioCapture({ socket, roomCode, user });
+  const [isStarting, setIsStarting] = useState(false);
 
-  const [transcripts, setTranscripts] = useState([]);
+  const [finalTranscripts, setFinalTranscripts] = useState([])
+  const [activeTurns, setActiveTurns] = useState({})
   const transcriptEndRef = useRef(null);
+
+  useEffect(() => {
+    if (isReady) {
+      setIsStarting(false);
+    }
+  }, [isReady]);
 
   // Listen for transcript updates from the socket
   useEffect(() => {
     if (!socket) return;
 
     const handleTranscript = (data) => {
-      // console.log('Transcript received on frontend:', data)
-      setTranscripts(prev => [...prev, data]);
-    };
+      if (data.end_of_turn) {
+        setFinalTranscripts(prev => [...prev, data])
+        setActiveTurns(prev => {
+          const updated = { ...prev }
+          delete updated[data.turn_order]
+          return updated
+        })
+      } else {
+        setActiveTurns(prev => ({
+          ...prev,
+          [data.turn_order]: data
+        }))
+      }
+    }
 
     socket.on('transcript-update', handleTranscript);
 
@@ -36,7 +55,7 @@ export default function Room() {
     if (transcriptEndRef.current) {
       transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [transcripts]);
+  }, [finalTranscripts, activeTurns]);
 
   const handleLeave = () => {
     if (socket) {
@@ -62,8 +81,16 @@ export default function Room() {
               </span>
             )}
             <button
-              disabled={!isConnected}
-              onClick={isRecording ? stopRecording : startRecording}
+              disabled={!isConnected || (isStarting && !isReady)}
+              onClick={() => {
+                if (isRecording) {
+                  stopRecording();
+                  setIsStarting(false);
+                } else {
+                  setIsStarting(true);
+                  startRecording();
+                }
+              }}
               className={`rounded-lg px-4 py-2 font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${isRecording
                 ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500'
                 : 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
@@ -112,16 +139,22 @@ export default function Room() {
           <div className="mt-10">
             <h2 className="mb-4 text-xl font-semibold text-gray-700">Live Transcript</h2>
             <div className="flex h-72 flex-col overflow-y-auto rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              {transcripts.length === 0 ? (
+              {finalTranscripts.length === 0 && Object.keys(activeTurns).length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-gray-400">
                   <p>No transcripts yet.</p>
                   <p className="text-sm">Click "Start Recording" to begin speaking.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {transcripts.map((t, i) => (
+                  {finalTranscripts.map((t, i) => (
                     <div key={i} className="text-gray-800 text-lg">
                       <span className="font-bold text-blue-600 mr-2">{t.userName}:</span>
+                      <span>{t.text}</span>
+                    </div>
+                  ))}
+                  {Object.values(activeTurns).map((t) => (
+                    <div key={t.turn_order} className="text-gray-400 text-lg italic">
+                      <span className="font-bold text-blue-300 mr-2">{t.userName}:</span>
                       <span>{t.text}</span>
                     </div>
                   ))}
