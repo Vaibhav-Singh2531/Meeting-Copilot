@@ -28,17 +28,18 @@ export default function Room() {
     if (!socket) return;
 
     const handleTranscript = (data) => {
+      const turnKey = `${data.userId}-${data.turn_order}`
       if (data.end_of_turn) {
         setFinalTranscripts(prev => [...prev, data])
         setActiveTurns(prev => {
           const updated = { ...prev }
-          delete updated[data.turn_order]
+          delete updated[turnKey]
           return updated
         })
       } else {
         setActiveTurns(prev => ({
           ...prev,
-          [data.turn_order]: data
+          [turnKey]: data
         }))
       }
     }
@@ -152,8 +153,8 @@ export default function Room() {
                       <span>{t.text}</span>
                     </div>
                   ))}
-                  {Object.values(activeTurns).map((t) => (
-                    <div key={t.turn_order} className="text-gray-400 text-lg italic">
+                  {Object.entries(activeTurns).map(([key, t]) => (
+                    <div key={key} className="text-gray-400 text-lg italic">
                       <span className="font-bold text-blue-300 mr-2">{t.userName}:</span>
                       <span>{t.text}</span>
                     </div>
