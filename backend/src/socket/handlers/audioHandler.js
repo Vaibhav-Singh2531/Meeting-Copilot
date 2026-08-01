@@ -15,7 +15,7 @@ export default function audioHandler(io, socket) {
   socket.on('start-transcription', async ({ roomCode, userId, userName }) => {
     try {
       const transcriber = createRealtimeTranscriber(
-        async (text) => {
+        async (text, end_of_turn, turn_order) => {
           try {
             const meeting = await prisma.meeting.findUnique({
               where: { roomCode }
@@ -39,7 +39,9 @@ export default function audioHandler(io, socket) {
             io.to(roomCode).emit('transcript-update', {
               userId,
               userName,
-              text
+              text,
+              end_of_turn,
+              turn_order
             });
           } catch (err) {
             console.error('Error in onTranscript callback:', err);

@@ -2,6 +2,8 @@ import { streamRollingSummary } from '../../services/ai/summaryService.js';
 
 export default function summaryHandler(io, socket) {
   socket.on('request-summary', async ({ roomCode, transcript }) => {
+    console.log('request-summary received, roomCode:', roomCode)
+    console.log('transcript length:', transcript?.length)
     try {
       if (!transcript || transcript.trim().length === 0) {
         return;

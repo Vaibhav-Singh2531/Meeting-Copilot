@@ -13,9 +13,14 @@ export default function Room() {
   const { isRecording, isReady, startRecording, stopRecording } = useAudioCapture({ socket, roomCode, user });
   const [isStarting, setIsStarting] = useState(false);
 
-  const [finalTranscripts, setFinalTranscripts] = useState([])
-  const [activeTurns, setActiveTurns] = useState({})
+  const [finalTranscripts, setFinalTranscripts] = useState([]);
+  const [activeTurns, setActiveTurns] = useState({});
   const transcriptEndRef = useRef(null);
+
+  const [summaryText, setSummaryText] = useState('');
+  const [isSummarising, setIsSummarising] = useState(false);
+  const [summaryInterval, setSummaryInterval] = useState(2);
+  const lastSummarisedIndexRef = useRef(0);
 
   useEffect(() => {
     if (isReady) {
@@ -23,31 +28,50 @@ export default function Room() {
     }
   }, [isReady]);
 
-  // Listen for transcript updates from the socket
+  // Listen for socket updates
   useEffect(() => {
     if (!socket) return;
 
     const handleTranscript = (data) => {
-      const turnKey = `${data.userId}-${data.turn_order}`
+      const turnKey = `${data.userId}-${data.turn_order}`;
       if (data.end_of_turn) {
-        setFinalTranscripts(prev => [...prev, data])
+        setFinalTranscripts(prev => [...prev, data]);
         setActiveTurns(prev => {
-          const updated = { ...prev }
-          delete updated[turnKey]
-          return updated
-        })
+          const updated = { ...prev };
+          delete updated[turnKey];
+          return updated;
+        });
       } else {
         setActiveTurns(prev => ({
           ...prev,
           [turnKey]: data
-        }))
+        }));
       }
-    }
+    };
+
+    const handleSummaryChunk = ({ chunk }) => {
+      setSummaryText(prev => prev + chunk);
+    };
+
+    const handleSummaryDone = () => {
+      setIsSummarising(false);
+    };
+
+    const handleSummaryError = ({ error }) => {
+      console.error('Summary Error:', error);
+      setIsSummarising(false);
+    };
 
     socket.on('transcript-update', handleTranscript);
+    socket.on('summary-chunk', handleSummaryChunk);
+    socket.on('summary-done', handleSummaryDone);
+    socket.on('summary-error', handleSummaryError);
 
     return () => {
       socket.off('transcript-update', handleTranscript);
+      socket.off('summary-chunk', handleSummaryChunk);
+      socket.off('summary-done', handleSummaryDone);
+      socket.off('summary-error', handleSummaryError);
     };
   }, [socket]);
 
@@ -57,6 +81,41 @@ export default function Room() {
       transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [finalTranscripts, activeTurns]);
+
+  // Auto-summary interval
+  useEffect(() => {
+    if (!socket || !roomCode) return;
+
+    const intervalId = setInterval(() => {
+      const newEntries = finalTranscripts.slice(lastSummarisedIndexRef.current);
+      if (newEntries.length === 0) return;
+
+      const joinedString = newEntries.map(t => `${t.userName}: ${t.text}`).join('\n');
+      lastSummarisedIndexRef.current = finalTranscripts.length;
+
+      setSummaryText('');
+      setIsSummarising(true);
+      socket.emit('request-summary', { roomCode, transcript: joinedString });
+
+    }, summaryInterval * 60 * 1000);
+
+    return () => clearInterval(intervalId);
+  }, [socket, roomCode, finalTranscripts, summaryInterval]);
+
+  const handleManualSummary = () => {
+    console.log('Manual summary clicked')
+    console.log('finalTranscripts length:', finalTranscripts.length)
+    console.log('lastSummarisedIndex:', lastSummarisedIndexRef.current)
+    const newEntries = finalTranscripts.slice(lastSummarisedIndexRef.current);
+    if (newEntries.length === 0) return;
+
+    const joinedString = newEntries.map(t => `${t.userName}: ${t.text}`).join('\n');
+    lastSummarisedIndexRef.current = finalTranscripts.length;
+
+    setSummaryText('');
+    setIsSummarising(true);
+    socket.emit('request-summary', { roomCode, transcript: joinedString });
+  };
 
   const handleLeave = () => {
     if (socket) {
@@ -111,7 +170,7 @@ export default function Room() {
       </header>
 
       <main className="flex-1 overflow-y-auto p-6">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-5xl pb-12">
           <h2 className="mb-6 text-xl font-semibold text-gray-700">Participants ({users.length})</h2>
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -160,6 +219,65 @@ export default function Room() {
                     </div>
                   ))}
                   <div ref={transcriptEndRef} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* AI Summary Section */}
+          <div className="mt-8 flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center space-x-4">
+              <label className="text-sm font-medium text-gray-700">Auto-summary every:</label>
+              <select
+                value={summaryInterval}
+                onChange={(e) => setSummaryInterval(Number(e.target.value))}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value={1}>1 minute</option>
+                <option value={2}>2 minutes</option>
+                <option value={5}>5 minutes</option>
+                <option value={10}>10 minutes</option>
+              </select>
+            </div>
+            <button
+              disabled={isSummarising || finalTranscripts.length === 0}
+              onClick={handleManualSummary}
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            >
+              Summarise Now
+            </button>
+          </div>
+
+          <div className="mt-8">
+            <div className="mb-4 flex items-center space-x-3">
+              <h2 className="text-xl font-semibold text-gray-700">AI Summary</h2>
+              {isSummarising && (
+                <div className="flex items-center space-x-2 rounded-full bg-green-50 px-3 py-1">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                  </span>
+                  <span className="text-sm font-medium text-green-700">Summarising...</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex h-64 flex-col overflow-y-auto rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              {!summaryText && !isSummarising && (
+                <div className="flex h-full flex-col items-center justify-center text-center text-gray-400">
+                  <p>Summary will appear here after the first interval or click Summarise Now</p>
+                </div>
+              )}
+
+              {!summaryText && isSummarising && (
+                <div className="flex h-full flex-col items-center justify-center text-center text-gray-400">
+                  <p>Generating summary...</p>
+                </div>
+              )}
+
+              {summaryText && (
+                <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+                  {summaryText}
                 </div>
               )}
             </div>
