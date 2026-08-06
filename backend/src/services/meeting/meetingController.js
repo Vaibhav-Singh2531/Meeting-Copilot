@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
-import { generateFinalSummary } from '../ai/summaryService.js';
+import postMeetingQueue from '../../jobs/queue.js';
 
 const { Pool } = pg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -101,7 +101,7 @@ export const endMeeting = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to end this meeting' });
     }
 
-    let updatedMeeting = await prisma.meeting.update({
+    await prisma.meeting.update({
       where: { id: meeting.id },
       data: {
         status: 'PROCESSING',
@@ -109,42 +109,21 @@ export const endMeeting = async (req, res) => {
       }
     });
 
-    const transcripts = await prisma.transcript.findMany({
-      where: { meetingId: meeting.id },
-      select: { speakerName: true, text: true },
-      orderBy: { startSec: 'asc' }
-    });
+    const transcript = req.body.transcript;
 
-    const fullTranscript = transcripts
-      .map((t) => `${t.speakerName}: ${t.text}`)
-      .join('\n');
-
-    if (!fullTranscript || fullTranscript.trim().length === 0) {
-      updatedMeeting = await prisma.meeting.update({
-        where: { id: meeting.id },
-        data: { status: 'DONE' }
+    if (transcript && transcript.trim().length > 0) {
+      await postMeetingQueue.add('post-meeting', { 
+        meetingId: meeting.id, 
+        transcript 
       });
-      return res.json(updatedMeeting);
-    }
-
-    try {
-      const finalSummary = await generateFinalSummary(fullTranscript);
-      updatedMeeting = await prisma.meeting.update({
-        where: { id: meeting.id },
-        data: {
-          finalSummary,
-          status: 'DONE'
-        }
-      });
-    } catch (summaryError) {
-      console.error('Error generating final summary:', summaryError);
-      updatedMeeting = await prisma.meeting.update({
+    } else {
+      await prisma.meeting.update({
         where: { id: meeting.id },
         data: { status: 'DONE' }
       });
     }
 
-    res.json(updatedMeeting);
+    res.json({ status: "PROCESSING", meetingId: meeting.id, roomCode });
   } catch (error) {
     console.error('End Meeting Error:', error);
     res.status(500).json({ error: 'Internal server error' });

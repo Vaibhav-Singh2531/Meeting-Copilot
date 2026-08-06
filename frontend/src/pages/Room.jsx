@@ -114,6 +114,7 @@ export default function Room() {
 
     setSummaryText('');
     setIsSummarising(true);
+    console.log('Transcript being sent:', joinedString)
     socket.emit('request-summary', { roomCode, transcript: joinedString });
   };
 

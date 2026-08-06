@@ -30,3 +30,24 @@ export async function generateFinalSummary(fullTranscript) {
     throw new Error(`Failed to generate final summary using Gemini: ${error.message}`);
   }
 }
+
+export async function extractActionItems(fullTranscript) {
+  try {
+    const prompt = `You are a meeting assistant. Extract all action items from this meeting transcript. Return ONLY a valid JSON array with no markdown, no backticks, no explanation. Each item must have these fields: title (string), assigneeName (string or null if not mentioned), priority (one of: LOW, MEDIUM, HIGH, URGENT), dueDate (null). Transcript: ${fullTranscript}`;
+
+    const result = await model.generateContent(prompt);
+    let text = result.response.text();
+    
+    // Strip markdown formatting if the model incorrectly returns it
+    if (text.startsWith('```json')) {
+      text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    } else if (text.startsWith('```')) {
+      text = text.replace(/```/g, '').trim();
+    }
+
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('Action Items Extraction Error:', error);
+    return [];
+  }
+}

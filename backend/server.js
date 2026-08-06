@@ -6,6 +6,7 @@ import cors from 'cors';
 import authRoutes from './src/services/auth/authRoutes.js';
 import meetingRoutes from './src/services/meeting/meetingRoutes.js';
 import { initSocket } from './src/socket/index.js';
+import './src/jobs/postMeetingJob.js';
 
 const app = express();
 const PORT = 5000;
