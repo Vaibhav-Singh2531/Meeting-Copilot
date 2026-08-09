@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import { generateFinalSummary, extractActionItems } from '../services/ai/summaryService.js';
+import { upsertMeetingEmbedding } from '../services/ai/embeddingService.js';
 
 const { Pool } = pg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -42,6 +43,24 @@ const postMeetingWorker = new Worker(
             dueDate: null
           }
         });
+      }
+
+      try {
+        const meeting = await prisma.meeting.findUnique({
+          where: { id: meetingId }
+        });
+        
+        if (meeting) {
+          await upsertMeetingEmbedding({
+            meetingId,
+            roomCode: meeting.roomCode,
+            title: meeting.title,
+            date: meeting.createdAt.toISOString(),
+            transcript
+          });
+        }
+      } catch (embError) {
+        console.error('Embedding step failed but continuing:', embError);
       }
 
       await prisma.meeting.update({
