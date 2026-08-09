@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import useSocket from '../hooks/useSocket';
 import useAudioCapture from '../hooks/useAudioCapture';
+import api from '../lib/api';
 
 export default function Room() {
   const { roomCode } = useParams();
@@ -22,11 +23,45 @@ export default function Room() {
   const [summaryInterval, setSummaryInterval] = useState(2);
   const lastSummarisedIndexRef = useRef(0);
 
+  // New state variables for End Meeting workflow
+  const [meetingHostId, setMeetingHostId] = useState(null);
+  const [isEndingMeeting, setIsEndingMeeting] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
+  const [finalSummary, setFinalSummary] = useState(null);
+  const [actionItems, setActionItems] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  const pollIntervalRef = useRef(null);
+
   useEffect(() => {
     if (isReady) {
       setIsStarting(false);
     }
   }, [isReady]);
+
+  // Fetch meeting host id on mount
+  useEffect(() => {
+    const fetchMeeting = async () => {
+      try {
+        const response = await api.get(`/meetings/${roomCode}`);
+        setMeetingHostId(response.data.hostId);
+      } catch (error) {
+        console.error('Error fetching meeting:', error);
+      }
+    };
+    if (roomCode) {
+      fetchMeeting();
+    }
+  }, [roomCode]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Listen for socket updates
   useEffect(() => {
@@ -103,9 +138,6 @@ export default function Room() {
   }, [socket, roomCode, finalTranscripts, summaryInterval]);
 
   const handleManualSummary = () => {
-    console.log('Manual summary clicked')
-    console.log('finalTranscripts length:', finalTranscripts.length)
-    console.log('lastSummarisedIndex:', lastSummarisedIndexRef.current)
     const newEntries = finalTranscripts.slice(lastSummarisedIndexRef.current);
     if (newEntries.length === 0) return;
 
@@ -114,8 +146,37 @@ export default function Room() {
 
     setSummaryText('');
     setIsSummarising(true);
-    console.log('Transcript being sent:', joinedString)
     socket.emit('request-summary', { roomCode, transcript: joinedString });
+  };
+
+  const handleEndMeeting = async () => {
+    try {
+      setIsEndingMeeting(true);
+      const fullTranscript = finalTranscripts.map(t => `${t.userName}: ${t.text}`).join('\n');
+      await api.patch(`/meetings/${roomCode}/end`, { transcript: fullTranscript });
+      
+      setShowEndModal(true);
+      setIsProcessing(true);
+
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const res = await api.get(`/meetings/${roomCode}`);
+          if (res.data.status === 'DONE') {
+            clearInterval(pollIntervalRef.current);
+            setFinalSummary(res.data.finalSummary);
+            setActionItems(res.data.actionItems || []);
+            setIsProcessing(false);
+          }
+        } catch (err) {
+          console.error('Polling error:', err);
+        }
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error ending meeting:', error);
+    } finally {
+      setIsEndingMeeting(false);
+    }
   };
 
   const handleLeave = () => {
@@ -128,6 +189,75 @@ export default function Room() {
 
   return (
     <div className="flex h-screen flex-col bg-gray-50">
+      {/* End Meeting Modal */}
+      {showEndModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center bg-gray-50">
+              <h2 className="text-xl font-bold text-gray-800">Meeting Ended</h2>
+              <button onClick={() => setShowEndModal(false)} className="text-gray-500 hover:text-gray-700 font-bold">✕</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              {isProcessing ? (
+                <div className="flex h-64 flex-col items-center justify-center space-y-4">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
+                  <p className="text-lg font-medium text-gray-600">Processing meeting... please wait</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  <section>
+                    <h3 className="mb-3 text-lg font-semibold text-gray-800">Final Summary</h3>
+                    <div className="rounded-lg bg-gray-50 p-4 text-gray-700 whitespace-pre-wrap leading-relaxed border border-gray-200">
+                      {finalSummary || "No summary available."}
+                    </div>
+                  </section>
+                  
+                  <section>
+                    <h3 className="mb-3 text-lg font-semibold text-gray-800">Action Items</h3>
+                    {actionItems.length === 0 ? (
+                      <p className="text-gray-500">No action items extracted.</p>
+                    ) : (
+                      <ul className="space-y-3">
+                        {actionItems.map((item, idx) => (
+                          <li key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-800">{item.title}</span>
+                              {item.assigneeName && (
+                                <span className="text-sm text-gray-500 mt-1">Assignee: {item.assigneeName}</span>
+                              )}
+                            </div>
+                            <div className="mt-2 sm:mt-0">
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide ${
+                                item.priority === 'LOW' ? 'bg-green-100 text-green-700' :
+                                item.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                                item.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {item.priority}
+                              </span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                </div>
+              )}
+            </div>
+            
+            <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-blue-700"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
         <h1 className="text-2xl font-extrabold tracking-tight text-gray-800">
           Room: <span className="text-blue-600">{roomCode}</span>
@@ -161,12 +291,23 @@ export default function Room() {
             </button>
           </div>
 
-          <button
-            onClick={handleLeave}
-            className="rounded-lg bg-red-50 px-4 py-2 font-semibold text-red-600 transition-colors hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-          >
-            Leave Meeting
-          </button>
+          <div className="flex space-x-3">
+            {user.id === meetingHostId && (
+              <button
+                disabled={isEndingMeeting}
+                onClick={handleEndMeeting}
+                className="rounded-lg bg-red-700 px-4 py-2 font-semibold text-white transition-colors hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+              >
+                {isEndingMeeting ? 'Ending...' : 'End Meeting'}
+              </button>
+            )}
+            <button
+              onClick={handleLeave}
+              className="rounded-lg bg-red-50 px-4 py-2 font-semibold text-red-600 transition-colors hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              Leave Meeting
+            </button>
+          </div>
         </div>
       </header>
 
