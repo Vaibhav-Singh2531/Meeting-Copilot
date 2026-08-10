@@ -1,5 +1,6 @@
 import express from 'express';
 import { createMeeting, getMeeting, endMeeting } from './meetingController.js';
+import { searchMeetings } from './searchController.js';
 import { protect } from '../../middleware/auth.js';
 
 const router = express.Router();
@@ -8,6 +9,7 @@ const router = express.Router();
 router.use(protect);
 
 router.post('/create', createMeeting);
+router.get('/search', searchMeetings);
 router.get('/:roomCode', getMeeting);
 router.patch('/:roomCode/end', endMeeting);
 

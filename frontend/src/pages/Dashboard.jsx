@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../lib/api';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState('');
+
+  // Search States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
 
   const handleLogout = async () => {
     await logout();
@@ -19,10 +26,99 @@ export default function Dashboard() {
     }
   };
 
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    try {
+      setIsSearching(true);
+      setSearchError(null);
+      setSearchResults(null);
+      
+      const response = await api.get(`/meetings/search?q=${encodeURIComponent(searchQuery)}`);
+      setSearchResults(response.data);
+    } catch (err) {
+      console.error('Search error:', err);
+      setSearchError(err.response?.data?.error || err.message || 'An error occurred during search.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-4xl space-y-6">
         
+        {/* Search Past Meetings */}
+        <div className="rounded-xl bg-white p-6 shadow-md">
+          <h2 className="mb-4 text-xl font-bold text-gray-800">Search Past Meetings</h2>
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-3 sm:space-y-0">
+            <input
+              type="text"
+              placeholder="Ask anything about your past meetings..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSearch();
+              }}
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleSearch}
+              disabled={isSearching || !searchQuery.trim()}
+              className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              {isSearching ? 'Searching...' : 'Search'}
+            </button>
+          </div>
+          <p className="mt-3 text-sm text-gray-500">Powered by RAG — search by meaning, not just keywords</p>
+
+          {searchError && (
+            <div className="mt-4 rounded-lg bg-red-50 p-4 text-red-600 border border-red-200">
+              {searchError}
+            </div>
+          )}
+
+          {searchResults && (
+            <div className="mt-8 space-y-6">
+              {/* AI Answer */}
+              <div className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded-r-lg">
+                <h3 className="font-bold text-blue-900 mb-2">AI Answer</h3>
+                <div className="whitespace-pre-wrap text-blue-800 leading-relaxed">
+                  {searchResults.answer}
+                </div>
+              </div>
+
+              {/* Relevant Meetings */}
+              <div>
+                <h3 className="mb-3 text-lg font-semibold text-gray-800">Relevant Meetings</h3>
+                {searchResults.meetings && searchResults.meetings.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {searchResults.meetings.map(meeting => (
+                      <div 
+                        key={meeting.id} 
+                        onClick={() => navigate(`/room/${meeting.roomCode}`)}
+                        className="cursor-pointer rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-gray-900">{meeting.title}</h4>
+                          <span className="text-sm text-gray-500">
+                            {new Date(meeting.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {meeting.finalSummary ? `${meeting.finalSummary.substring(0, 100)}...` : 'No summary available.'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No matching meetings found</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Profile Card */}
         <div className="rounded-xl bg-white p-6 shadow-md">
           <div className="flex items-center justify-between">
