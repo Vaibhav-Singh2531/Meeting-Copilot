@@ -15,7 +15,7 @@ const postMeetingWorker = new Worker(
   'post-meeting',
   async (job) => {
     const { meetingId, transcript } = job.data;
-    
+
     try {
       if (!transcript || transcript.trim() === '') {
         await prisma.meeting.update({
@@ -32,7 +32,7 @@ const postMeetingWorker = new Worker(
       });
 
       const actionItems = await extractActionItems(transcript);
-      
+
       for (const item of actionItems) {
         await prisma.actionItem.create({
           data: {
@@ -49,7 +49,7 @@ const postMeetingWorker = new Worker(
         const meeting = await prisma.meeting.findUnique({
           where: { id: meetingId }
         });
-        
+
         if (meeting) {
           await upsertMeetingEmbedding({
             meetingId,
@@ -78,5 +78,22 @@ const postMeetingWorker = new Worker(
   },
   { connection: redisConnection }
 );
+console.log('Bull worker started, listening for jobs...')
+
+postMeetingWorker.on('completed', (job) => {
+  console.log('Job completed:', job.id)
+})
+
+postMeetingWorker.on('failed', (job, err) => {
+  console.error('Job failed:', job.id, err.message)
+})
+
+redisConnection.on('error', (err) => {
+  console.error('Redis connection error:', err.message)
+})
+
+redisConnection.on('connect', () => {
+  console.log('Redis connected successfully')
+})
 
 export default postMeetingWorker;
