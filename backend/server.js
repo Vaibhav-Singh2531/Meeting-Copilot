@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import authRoutes from './src/services/auth/authRoutes.js';
 import meetingRoutes from './src/services/meeting/meetingRoutes.js';
+import analyticsRoutes from './src/services/analytics/analyticsRoutes.js';
 import { initSocket } from './src/socket/index.js';
 import './src/jobs/postMeetingJob.js';
 
@@ -24,6 +25,7 @@ app.use(cookieParser());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/meetings', meetingRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

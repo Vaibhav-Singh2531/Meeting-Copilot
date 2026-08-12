@@ -18,10 +18,10 @@ export async function upsertMeetingEmbedding({ meetingId, roomCode, title, date,
     const index = initPinecone()
 
     await index.upsertRecords({
-      records: [                    // ← wrap in { records: [...] }
+      records: [
         {
           id: meetingId,
-          text: transcript,         // ← field name matches your index field map
+          text: transcript,
           meetingId: meetingId,
           roomCode: roomCode,
           title: title,
