@@ -34,22 +34,16 @@ export const getAnalytics = async (req, res) => {
 
     const totalMeetings = participatedMeetings.length;
 
-    let totalMinutes = 0;
-    let meetingsWithDuration = 0;
+    // Total minutes
+    const totalMinutes = Math.round(
+      participatedMeetings.reduce((sum, m) => sum + (m.durationSec || 0), 0) / 60
+    )
 
-    for (const m of participatedMeetings) {
-      if (m.startedAt && m.endedAt) {
-        const duration = (m.endedAt.getTime() - m.startedAt.getTime()) / 60000;
-        totalMinutes += duration;
-        meetingsWithDuration++;
-      }
-    }
-
-    const avgDurationMinutes = meetingsWithDuration > 0 
-      ? Math.round((totalMinutes / meetingsWithDuration) * 10) / 10 
-      : 0;
-
-    totalMinutes = Math.round(totalMinutes);
+    // Average duration
+    const meetingsWithDuration = participatedMeetings.filter(m => m.durationSec)
+    const avgDurationMinutes = meetingsWithDuration.length > 0
+      ? (meetingsWithDuration.reduce((sum, m) => sum + m.durationSec, 0) / meetingsWithDuration.length / 60).toFixed(1)
+      : 0
 
     const transcripts = await prisma.transcript.findMany({
       where: {
@@ -78,12 +72,12 @@ export const getAnalytics = async (req, res) => {
 
     const meetingFrequency = [];
     const now = new Date();
-    
+
     for (let i = 7; i >= 0; i--) {
       const start = new Date(now.getTime() - (i * 7 + 7) * 24 * 60 * 60 * 1000);
       const end = new Date(now.getTime() - (i * 7) * 24 * 60 * 60 * 1000);
       const label = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
+
       const count = participatedMeetings.filter(m => m.createdAt >= start && m.createdAt < end).length;
       meetingFrequency.push({ week: label, count });
     }
@@ -110,7 +104,7 @@ export const getAnalytics = async (req, res) => {
       meetingFrequency,
       recentMeetings
     });
-    
+
   } catch (error) {
     console.error('Analytics Error:', error);
     res.status(500).json({ error: 'Internal server error' });

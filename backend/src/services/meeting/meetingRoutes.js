@@ -1,5 +1,5 @@
 import express from 'express';
-import { createMeeting, getMeeting, endMeeting } from './meetingController.js';
+import { createMeeting, getMeeting, endMeeting, getMeetingTranscripts } from './meetingController.js';
 import { searchMeetings } from './searchController.js';
 import { protect } from '../../middleware/auth.js';
 
@@ -10,6 +10,7 @@ router.use(protect);
 
 router.post('/create', createMeeting);
 router.get('/search', searchMeetings);
+router.get('/:roomCode/transcripts', getMeetingTranscripts);
 router.get('/:roomCode', getMeeting);
 router.patch('/:roomCode/end', endMeeting);
 

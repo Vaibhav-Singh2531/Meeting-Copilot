@@ -21,7 +21,7 @@ export const createMeeting = async (req, res) => {
   try {
     const { title } = req.body;
     let roomCode = generateRoomCode();
-    
+
     // Ensure room code is unique
     let isUnique = false;
     while (!isUnique) {
@@ -70,6 +70,9 @@ export const getMeeting = async (req, res) => {
               }
             }
           }
+        },
+        actionItems: {
+          select: { title: true, assigneeName: true, priority: true }
         }
       }
     });
@@ -88,7 +91,7 @@ export const getMeeting = async (req, res) => {
 export const endMeeting = async (req, res) => {
   try {
     const { roomCode } = req.params;
-    
+
     const meeting = await prisma.meeting.findUnique({
       where: { roomCode }
     });
@@ -101,20 +104,25 @@ export const endMeeting = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to end this meeting' });
     }
 
+    const startTime = meeting.startedAt || meeting.createdAt
+    const endTime = new Date()
+    const durationSec = Math.round((endTime - startTime) / 1000)
+
     await prisma.meeting.update({
       where: { id: meeting.id },
       data: {
         status: 'PROCESSING',
-        endedAt: new Date()
+        endedAt: endTime,
+        durationSec: durationSec
       }
     });
 
     const transcript = req.body.transcript;
 
     if (transcript && transcript.trim().length > 0) {
-      await postMeetingQueue.add('post-meeting', { 
-        meetingId: meeting.id, 
-        transcript 
+      await postMeetingQueue.add('post-meeting', {
+        meetingId: meeting.id,
+        transcript
       });
     } else {
       await prisma.meeting.update({
@@ -126,6 +134,31 @@ export const endMeeting = async (req, res) => {
     res.json({ status: "PROCESSING", meetingId: meeting.id, roomCode });
   } catch (error) {
     console.error('End Meeting Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getMeetingTranscripts = async (req, res) => {
+  try {
+    const { roomCode } = req.params;
+    
+    const meeting = await prisma.meeting.findUnique({
+      where: { roomCode }
+    });
+
+    if (!meeting) {
+      return res.status(404).json({ error: 'Meeting not found' });
+    }
+
+    const transcripts = await prisma.transcript.findMany({
+      where: { meetingId: meeting.id },
+      select: { speakerName: true, text: true, startSec: true },
+      orderBy: { startSec: 'asc' }
+    });
+
+    res.json(transcripts);
+  } catch (error) {
+    console.error('Get Transcripts Error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

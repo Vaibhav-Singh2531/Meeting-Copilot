@@ -140,12 +140,20 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <button 
-              onClick={handleLogout}
-              className="rounded-lg bg-red-50 px-5 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-            >
-              Log out
-            </button>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => navigate('/analytics')}
+                className="rounded-lg bg-blue-50 px-5 py-2.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Analytics
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="rounded-lg bg-red-50 px-5 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              >
+                Log out
+              </button>
+            </div>
           </div>
         </div>
 
