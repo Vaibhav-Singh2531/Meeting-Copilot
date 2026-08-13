@@ -7,6 +7,7 @@ import authRoutes from './src/services/auth/authRoutes.js';
 import meetingRoutes from './src/services/meeting/meetingRoutes.js';
 import analyticsRoutes from './src/services/analytics/analyticsRoutes.js';
 import { initSocket } from './src/socket/index.js';
+import { generalLimiter, aiLimiter, authLimiter } from './src/middleware/rateLimiter.js';
 import './src/jobs/postMeetingJob.js';
 
 const app = express();
@@ -23,7 +24,9 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api', generalLimiter);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/meetings/search', aiLimiter);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/analytics', analyticsRoutes);
 

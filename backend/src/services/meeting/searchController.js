@@ -1,3 +1,4 @@
+import { getCache, setCache } from '../../cache/cacheService.js';
 import { searchSimilarMeetings } from '../ai/embeddingService.js';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -19,7 +20,16 @@ export const searchMeetings = async (req, res) => {
       return res.status(400).json({ error: 'Query string q is required.' });
     }
 
-    const searchResults = await searchSimilarMeetings(q, 5);
+    const queryText = q.trim();
+    const cacheKey = `search:${queryText.toLowerCase()}`;
+    
+    const cachedResult = await getCache(cacheKey);
+    if (cachedResult) {
+      console.log(`Cache hit for search: ${queryText}`);
+      return res.json(cachedResult);
+    }
+
+    const searchResults = await searchSimilarMeetings(queryText, 5);
     
     // Pinecone Integrated Embeddings searchRecords returns an object containing an array of matched records
     const matches = Array.isArray(searchResults) ? searchResults : (searchResults.records || searchResults.matches || []);
@@ -56,7 +66,11 @@ export const searchMeetings = async (req, res) => {
     const geminiResult = await model.generateContent(prompt);
     const answer = geminiResult.response.text();
 
-    res.json({ answer, meetings: fetchedMeetings });
+    const result = { answer, meetings: fetchedMeetings };
+    await setCache(cacheKey, result, 300);
+    console.log(`Cache miss for search: ${queryText} — result cached`);
+
+    res.json(result);
   } catch (error) {
     console.error('Search Controller Error:', error);
     res.status(500).json({ error: 'Internal server error' });

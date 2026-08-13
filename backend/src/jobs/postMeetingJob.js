@@ -1,4 +1,5 @@
 import { Worker } from 'bullmq';
+import { setCache } from '../cache/cacheService.js';
 import { redisConnection } from './queue.js';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -30,6 +31,9 @@ const postMeetingWorker = new Worker(
         where: { id: meetingId },
         data: { finalSummary }
       });
+
+      await setCache(`summary:${meetingId}`, finalSummary, 0);
+      console.log(`Summary cached for meeting: ${meetingId}`);
 
       const actionItems = await extractActionItems(transcript);
 

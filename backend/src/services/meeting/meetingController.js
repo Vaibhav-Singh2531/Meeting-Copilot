@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { getCache } from '../../cache/cacheService.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import postMeetingQueue from '../../jobs/queue.js';
@@ -81,6 +82,15 @@ export const getMeeting = async (req, res) => {
       return res.status(404).json({ error: 'Meeting not found' });
     }
 
+    const cacheKey = `summary:${meeting.id}`;
+    const cachedSummary = await getCache(cacheKey);
+
+    if (cachedSummary) {
+      console.log(`Cache hit for summary: ${meeting.id}`);
+      return res.json({ ...meeting, finalSummary: cachedSummary });
+    }
+
+    console.log(`Cache miss for summary: ${meeting.id}`);
     res.json(meeting);
   } catch (error) {
     console.error('Get Meeting Error:', error);
