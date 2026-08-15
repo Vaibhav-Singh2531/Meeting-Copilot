@@ -1,18 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+
+gsap.registerPlugin(useGSAP);
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState('');
+  const containerRef = useRef();
 
   // Search States
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
+
+  useGSAP(() => {
+    // Header/welcome animation
+    gsap.fromTo(
+      '.gsap-header',
+      { opacity: 0, y: -20 },
+      { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }
+    );
+
+    // Action cards stagger
+    gsap.fromTo(
+      '.gsap-card',
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 0.5, stagger: 0.15, delay: 0.2, ease: 'power2.out' }
+    );
+
+    // Analytics button
+    gsap.fromTo(
+      '.gsap-analytics',
+      { opacity: 0, x: 20 },
+      { opacity: 1, x: 0, duration: 0.5, delay: 0.5, ease: 'power2.out' }
+    );
+  }, { scope: containerRef });
+
+  useGSAP(() => {
+    if (searchResults) {
+      gsap.fromTo(
+        '.gsap-results',
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
+      );
+    }
+  }, { dependencies: [searchResults], scope: containerRef });
 
   const handleLogout = async () => {
     await logout();
@@ -45,11 +83,11 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div ref={containerRef} className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-4xl space-y-6">
         
         {/* Search Past Meetings */}
-        <div className="rounded-xl bg-white p-6 shadow-md">
+        <div className="gsap-card rounded-xl bg-white p-6 shadow-md">
           <h2 className="mb-4 text-xl font-bold text-gray-800">Search Past Meetings</h2>
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-3 sm:space-y-0">
             <input
@@ -79,7 +117,7 @@ export default function Dashboard() {
           )}
 
           {searchResults && (
-            <div className="mt-8 space-y-6">
+            <div className="gsap-results mt-8 space-y-6">
               {/* AI Answer */}
               <div className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded-r-lg">
                 <h3 className="font-bold text-blue-900 mb-2">AI Answer</h3>
@@ -120,7 +158,7 @@ export default function Dashboard() {
         </div>
 
         {/* Profile Card */}
-        <div className="rounded-xl bg-white p-6 shadow-md">
+        <div className="gsap-header rounded-xl bg-white p-6 shadow-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               {user.avatarUrl ? (
@@ -143,7 +181,7 @@ export default function Dashboard() {
             <div className="flex space-x-3">
               <button 
                 onClick={() => navigate('/analytics')}
-                className="rounded-lg bg-blue-50 px-5 py-2.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="gsap-analytics rounded-lg bg-blue-50 px-5 py-2.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Analytics
               </button>
@@ -160,7 +198,7 @@ export default function Dashboard() {
         {/* Meeting Actions */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Start Meeting */}
-          <div className="flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-md">
+          <div className="gsap-card flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-md">
             <h2 className="mb-2 text-xl font-bold text-gray-800">Start a Meeting</h2>
             <p className="mb-6 text-sm text-gray-500">Create a new meeting room and invite others.</p>
             <button
@@ -172,7 +210,7 @@ export default function Dashboard() {
           </div>
 
           {/* Join Meeting */}
-          <div className="flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-md">
+          <div className="gsap-card flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-md">
             <h2 className="mb-2 text-xl font-bold text-gray-800">Join a Meeting</h2>
             <p className="mb-6 text-sm text-gray-500">Enter a room code to join an existing meeting.</p>
             <form onSubmit={handleJoin} className="w-full space-y-3">
