@@ -4,7 +4,7 @@ import api from '../lib/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { Toaster } from 'react-hot-toast';
+import Navbar from '../components/Navbar';
 
 gsap.registerPlugin(useGSAP);
 
@@ -150,21 +150,7 @@ export default function Analytics() {
 
   return (
     <div ref={containerRef} className="min-h-screen bg-slate-900 text-slate-200 selection:bg-blue-500/30 font-sans pb-12">
-      <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
-      
-      {/* Top Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-slate-800/50 backdrop-blur p-4 shadow-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-xl font-extrabold text-transparent">Meeting Copilot</span>
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="gsap-back flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-          >
-            <span>←</span>
-            <span>Dashboard</span>
-          </button>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="mx-auto max-w-5xl p-6 sm:p-8 space-y-8">
         

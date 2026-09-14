@@ -1,14 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import Navbar from '../components/Navbar';
 
 gsap.registerPlugin(useGSAP);
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState('');
   const containerRef = useRef();
@@ -20,25 +19,11 @@ export default function Dashboard() {
   const [searchError, setSearchError] = useState(null);
 
   useGSAP(() => {
-    // Header/welcome animation
-    gsap.fromTo(
-      '.gsap-header',
-      { opacity: 0, y: -20 },
-      { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }
-    );
-
     // Action cards stagger
     gsap.fromTo(
       '.gsap-card',
       { opacity: 0, y: 30 },
       { opacity: 1, y: 0, duration: 0.5, stagger: 0.15, delay: 0.2, ease: 'power2.out' }
-    );
-
-    // Analytics button
-    gsap.fromTo(
-      '.gsap-analytics',
-      { opacity: 0, x: 20 },
-      { opacity: 1, x: 0, duration: 0.5, delay: 0.5, ease: 'power2.out' }
     );
   }, { scope: containerRef });
 
@@ -51,11 +36,6 @@ export default function Dashboard() {
       );
     }
   }, { dependencies: [searchResults], scope: containerRef });
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/', { replace: true });
-  };
 
   const handleJoin = (e) => {
     e.preventDefault();
@@ -83,8 +63,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <div ref={containerRef} className="min-h-screen bg-gray-50 pb-12">
+      <Navbar />
+      <div className="mx-auto max-w-4xl space-y-6 p-8">
         
         {/* Search Past Meetings */}
         <div className="gsap-card rounded-xl bg-white p-6 shadow-md">
@@ -155,44 +136,6 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Profile Card */}
-        <div className="gsap-header rounded-xl bg-white p-6 shadow-md">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {user.avatarUrl ? (
-                <img 
-                  src={user.avatarUrl} 
-                  alt={`${user.name}'s avatar`} 
-                  className="h-16 w-16 rounded-full object-cover shadow-sm ring-2 ring-gray-100"
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-2xl font-bold text-blue-600 shadow-sm">
-                  {user.name?.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.name}</h1>
-                <p className="text-sm text-gray-500">{user.email}</p>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3">
-              <button 
-                onClick={() => navigate('/analytics')}
-                className="gsap-analytics rounded-lg bg-blue-50 px-5 py-2.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Analytics
-              </button>
-              <button 
-                onClick={handleLogout}
-                className="rounded-lg bg-red-50 px-5 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                Log out
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Meeting Actions */}

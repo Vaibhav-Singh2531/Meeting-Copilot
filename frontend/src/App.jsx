@@ -8,53 +8,57 @@ import CreateMeeting from './pages/CreateMeeting';
 import MeetingDetail from './pages/MeetingDetail';
 import Room from './pages/Room';
 import ProtectedRoute from './components/ProtectedRoute';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/analytics" 
-        element={
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/create" 
-        element={
-          <ProtectedRoute>
-            <CreateMeeting />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/meeting/:roomCode" 
-        element={
-          <ProtectedRoute>
-            <MeetingDetail />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/room/:roomCode" 
-        element={
-          <ProtectedRoute>
-            <Room />
-          </ProtectedRoute>
-        } 
-      />
-    </Routes>
+    <>
+      <Toaster position="top-right" />
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/analytics" 
+          element={
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/create" 
+          element={
+            <ProtectedRoute>
+              <CreateMeeting />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/meeting/:roomCode" 
+          element={
+            <ProtectedRoute>
+              <MeetingDetail />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/room/:roomCode" 
+          element={
+            <ProtectedRoute>
+              <Room />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
+    </>
   );
 }
 
