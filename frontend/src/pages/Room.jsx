@@ -17,6 +17,7 @@ export default function Room() {
   const [finalTranscripts, setFinalTranscripts] = useState([]);
   const [activeTurns, setActiveTurns] = useState({});
   const transcriptEndRef = useRef(null);
+  const transcriptContainerRef = useRef(null);
 
   const [summaryText, setSummaryText] = useState('');
   const [isSummarising, setIsSummarising] = useState(false);
@@ -112,8 +113,8 @@ export default function Room() {
 
   // Auto-scroll to the bottom when new transcripts arrive
   useEffect(() => {
-    if (transcriptEndRef.current) {
-      transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (transcriptContainerRef.current) {
+      transcriptContainerRef.current.scrollTop = transcriptContainerRef.current.scrollHeight;
     }
   }, [finalTranscripts, activeTurns]);
 
@@ -340,7 +341,7 @@ export default function Room() {
 
           <div className="mt-10">
             <h2 className="mb-4 text-xl font-semibold text-gray-700">Live Transcript</h2>
-            <div className="flex h-72 flex-col overflow-y-auto rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div ref={transcriptContainerRef} className="flex h-72 flex-col overflow-y-auto rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               {finalTranscripts.length === 0 && Object.keys(activeTurns).length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-gray-400">
                   <p>No transcripts yet.</p>
