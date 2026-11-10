@@ -1,1 +1,122 @@
 @import "tailwindcss";
+
+/* ─── Design Tokens (from reference design system) ─── */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.978 0.009 220);
+  --foreground: oklch(0.252 0.045 245);
+  --card: oklch(0.998 0.003 220);
+  --card-foreground: oklch(0.252 0.045 245);
+  --popover: oklch(0.998 0.003 220);
+  --popover-foreground: oklch(0.252 0.045 245);
+  --primary: oklch(0.47 0.102 220);
+  --primary-foreground: oklch(0.985 0.004 220);
+  --secondary: oklch(0.948 0.018 212);
+  --secondary-foreground: oklch(0.32 0.07 230);
+  --muted: oklch(0.953 0.012 222);
+  --muted-foreground: oklch(0.51 0.034 234);
+  --accent: oklch(0.944 0.024 204);
+  --accent-foreground: oklch(0.30 0.069 235);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.91 0.017 220);
+  --input: oklch(0.91 0.017 220);
+  --ring: oklch(0.59 0.093 208);
+  --chart-1: oklch(0.56 0.105 200);
+  --chart-2: oklch(0.48 0.087 230);
+  --chart-3: oklch(0.73 0.13 75);
+  --chart-4: oklch(0.63 0.12 170);
+  --chart-5: oklch(0.66 0.09 225);
+  --sidebar: oklch(0.253 0.047 245);
+  --sidebar-foreground: oklch(0.96 0.012 215);
+  --sidebar-primary: oklch(0.68 0.112 195);
+  --sidebar-primary-foreground: oklch(0.19 0.05 245);
+  --sidebar-accent: oklch(0.32 0.052 235);
+  --sidebar-accent-foreground: oklch(0.96 0.012 215);
+  --sidebar-border: oklch(0.36 0.043 240);
+  --sidebar-ring: oklch(0.66 0.10 205);
+  --brand: oklch(0.47 0.102 220);
+  --topbar: oklch(0.247 0.052 245);
+  --topbar-foreground: oklch(0.96 0.012 215);
+  --topbar-muted: oklch(0.82 0.026 218);
+  --topbar-border: oklch(0.36 0.043 240);
+  --topbar-selected: oklch(0.33 0.052 232);
+  --topbar-selected-foreground: oklch(0.99 0.004 220);
+  --brand-mark: oklch(0.68 0.112 195);
+  --brand-mark-foreground: oklch(0.20 0.051 245);
+  --avatar: oklch(0.69 0.106 196);
+  --avatar-foreground: oklch(0.20 0.051 245);
+  --online: oklch(0.33 0.052 232);
+  --online-foreground: oklch(0.89 0.05 173);
+  --online-border: oklch(0.42 0.055 214);
+  --online-dot: oklch(0.76 0.13 170);
+  --icon-wash: oklch(0.94 0.027 206);
+  --highlight: oklch(0.60 0.12 75);
+  --highlight-wash: oklch(0.96 0.04 85);
+  --note: oklch(0.966 0.017 210);
+  --note-foreground: oklch(0.40 0.038 230);
+  --shadow-panel: 0 2px 8px color-mix(in oklab, oklch(0.252 0.045 245) 6%, transparent);
+}
+
+/* ─── Utility classes using the design tokens ─── */
+.bg-background    { background-color: var(--background); }
+.bg-card          { background-color: var(--card); }
+.bg-topbar        { background-color: var(--topbar); }
+.bg-brand-mark    { background-color: var(--brand-mark); }
+.bg-avatar        { background-color: var(--avatar); }
+.bg-online        { background-color: var(--online); }
+.bg-icon-wash     { background-color: var(--icon-wash); }
+.bg-highlight-wash{ background-color: var(--highlight-wash); }
+.bg-note          { background-color: var(--note); }
+.bg-topbar-selected { background-color: var(--topbar-selected); }
+.bg-primary       { background-color: var(--primary); }
+.bg-secondary     { background-color: var(--secondary); }
+.bg-muted         { background-color: var(--muted); }
+.bg-input         { background-color: var(--input); }
+
+.text-foreground         { color: var(--foreground); }
+.text-topbar-foreground  { color: var(--topbar-foreground); }
+.text-topbar-muted       { color: var(--topbar-muted); }
+.text-brand              { color: var(--brand); }
+.text-brand-mark-foreground { color: var(--brand-mark-foreground); }
+.text-avatar-foreground  { color: var(--avatar-foreground); }
+.text-online-foreground  { color: var(--online-foreground); }
+.text-muted-foreground   { color: var(--muted-foreground); }
+.text-note-foreground    { color: var(--note-foreground); }
+.text-primary-foreground { color: var(--primary-foreground); }
+.text-topbar-selected-foreground { color: var(--topbar-selected-foreground); }
+.text-highlight   { color: var(--highlight); }
+.text-destructive { color: var(--destructive); }
+
+.border-topbar-border { border-color: var(--topbar-border); }
+.border-online-border { border-color: var(--online-border); }
+.border-border        { border-color: var(--border); }
+
+.bg-online-dot  { background-color: var(--online-dot); }
+
+.shadow-panel { box-shadow: var(--shadow-panel); }
+
+.font-display { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
+
+/* Dialog/Modal overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 28rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+

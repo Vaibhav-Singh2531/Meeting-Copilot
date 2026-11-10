@@ -112,19 +112,12 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 p-8">
-        <div className="mx-auto max-w-5xl space-y-8 animate-pulse">
-          <div className="h-16 w-full rounded-2xl bg-slate-800/50 border border-white/10"></div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-             <div className="h-28 rounded-2xl bg-slate-800/50 border border-white/10"></div>
-             <div className="h-28 rounded-2xl bg-slate-800/50 border border-white/10"></div>
-             <div className="h-28 rounded-2xl bg-slate-800/50 border border-white/10"></div>
-             <div className="h-28 rounded-2xl bg-slate-800/50 border border-white/10"></div>
-          </div>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-             <div className="h-72 rounded-2xl bg-slate-800/50 border border-white/10"></div>
-             <div className="h-72 rounded-2xl bg-slate-800/50 border border-white/10"></div>
-          </div>
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)' }}>
+        <Navbar />
+        <div style={{ margin: '2rem auto', maxWidth: '1120px', padding: '0 2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {[1,2,3].map(i => (
+            <div key={i} style={{ height: '7rem', borderRadius: '1rem', backgroundColor: 'var(--muted)', border: '1px solid var(--border)' }} />
+          ))}
         </div>
       </div>
     );
@@ -132,14 +125,14 @@ export default function Analytics() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-900 p-4">
-        <div className="rounded-2xl border border-red-500/30 bg-slate-800/80 p-8 shadow-xl w-full max-w-md text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20 text-3xl text-red-500">⚠️</div>
-          <h2 className="text-xl font-bold text-white mb-2">Failed to load analytics</h2>
-          <p className="text-slate-400 mb-6">{error}</p>
-          <button 
-            onClick={() => navigate('/dashboard')} 
-            className="w-full rounded-lg bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 transition"
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--background)', padding: '1rem' }}>
+        <div style={{ borderRadius: '1rem', border: '1px solid var(--border)', backgroundColor: 'var(--card)', padding: '2rem', boxShadow: 'var(--shadow-panel)', width: '100%', maxWidth: '28rem', textAlign: 'center' }}>
+          <div style={{ margin: '0 auto 1rem', display: 'flex', width: '64px', height: '64px', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', backgroundColor: 'var(--highlight-wash)', fontSize: '1.75rem' }}>⚠️</div>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px' }}>Failed to load analytics</h2>
+          <p style={{ color: 'var(--muted-foreground)', marginBottom: '1.5rem' }}>{error}</p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            style={{ width: '100%', borderRadius: '8px', backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)', padding: '12px 16px', fontWeight: 600, border: 'none', cursor: 'pointer' }}
           >
             Go Back
           </button>
@@ -149,137 +142,137 @@ export default function Analytics() {
   }
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-slate-900 text-slate-200 selection:bg-blue-500/30 font-sans pb-12">
+    <div ref={containerRef} style={{ minHeight: '100vh', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
       <Navbar />
 
-      <div className="mx-auto max-w-5xl p-6 sm:p-8 space-y-8">
-        
+      <div style={{ margin: '0 auto', maxWidth: '1120px', padding: '2.5rem 2.5rem 4rem' }}>
+
         {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-extrabold text-white flex items-center space-x-3">
-            <span>📈</span>
-            <span>Analytics</span>
-          </h1>
-          <p className="mt-1 text-slate-400">Insights from your meetings</p>
+        <div style={{ marginBottom: '2rem' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--brand)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--brand)' }} />
+            Your activity
+          </p>
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: 0 }}>Analytics</h1>
+          <p style={{ marginTop: '6px', fontSize: '15px', color: 'var(--muted-foreground)' }}>Insights from your meetings</p>
         </div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="gsap-stat-card relative flex items-center space-x-4 rounded-2xl border border-white/10 bg-slate-800/50 p-6 shadow-sm overflow-hidden">
-            <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-blue-500 to-transparent"></div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 text-2xl">📅</div>
-            <div>
-              <p className="text-sm font-medium text-slate-400">Total Meetings</p>
-              <p className="gsap-count-meetings text-2xl font-bold text-white">0</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+          {[
+            { label: 'Total Meetings',   countClass: 'gsap-count-meetings', icon: '📅', accent: 'var(--primary)' },
+            { label: 'Meetings Hosted',  countClass: 'gsap-count-hosted',   icon: '🎤', accent: 'var(--highlight)' },
+            { label: 'Total Minutes',    countClass: 'gsap-count-minutes',  icon: '⏱️', accent: 'var(--primary)' },
+            { label: 'Avg Duration',     countClass: 'gsap-count-avg',      icon: '📊', accent: 'var(--highlight)', suffix: ' mins' },
+          ].map(({ label, countClass, icon, accent, suffix }) => (
+            <div
+              key={label}
+              className="gsap-stat-card"
+              style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: 'var(--card)', padding: '1.5rem', boxShadow: 'var(--shadow-panel)', overflow: 'hidden' }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, height: '3px', width: '100%', backgroundColor: accent, opacity: 0.5 }} />
+              <div style={{ display: 'flex', width: '48px', height: '48px', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', backgroundColor: 'var(--icon-wash)', fontSize: '1.4rem', flexShrink: 0 }}>{icon}</div>
+              <div>
+                <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--muted-foreground)', margin: 0 }}>{label}</p>
+                <p style={{ fontSize: '1.6rem', fontWeight: 700, margin: '2px 0 0' }}>
+                  <span className={countClass}>0</span>
+                  {suffix && <span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--muted-foreground)' }}>{suffix}</span>}
+                </p>
+              </div>
             </div>
-          </div>
-          
-          <div className="gsap-stat-card relative flex items-center space-x-4 rounded-2xl border border-white/10 bg-slate-800/50 p-6 shadow-sm overflow-hidden">
-            <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-purple-500 to-transparent"></div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 text-2xl">🎤</div>
-            <div>
-              <p className="text-sm font-medium text-slate-400">Meetings Hosted</p>
-              <p className="gsap-count-hosted text-2xl font-bold text-white">0</p>
-            </div>
-          </div>
-          
-          <div className="gsap-stat-card relative flex items-center space-x-4 rounded-2xl border border-white/10 bg-slate-800/50 p-6 shadow-sm overflow-hidden">
-            <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-green-500 to-transparent"></div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10 text-green-400 text-2xl">⏱️</div>
-            <div>
-              <p className="text-sm font-medium text-slate-400">Total Minutes</p>
-              <p className="gsap-count-minutes text-2xl font-bold text-white">0</p>
-            </div>
-          </div>
-          
-          <div className="gsap-stat-card relative flex items-center space-x-4 rounded-2xl border border-white/10 bg-slate-800/50 p-6 shadow-sm overflow-hidden">
-            <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-orange-500 to-transparent"></div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400 text-2xl">📊</div>
-            <div>
-              <p className="text-sm font-medium text-slate-400">Avg Duration</p>
-              <p className="text-2xl font-bold text-white"><span className="gsap-count-avg">0</span> <span className="text-sm font-normal text-slate-500">mins</span></p>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
           {/* Frequency Chart */}
-          <div className="gsap-chart rounded-2xl border border-white/10 bg-slate-800/50 p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-white">Meetings Over Time</h3>
-            <p className="mb-6 text-sm text-slate-400">Weekly breakdown of meeting activity</p>
-            <div className="h-72 w-full">
+          <div className="gsap-chart" style={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: 'var(--card)', padding: '1.5rem', boxShadow: 'var(--shadow-panel)' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 4px' }}>Meetings Over Time</h3>
+            <p style={{ marginBottom: '1.5rem', fontSize: '13px', color: 'var(--muted-foreground)' }}>Weekly breakdown of meeting activity</p>
+            <div style={{ height: '288px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.meetingFrequency} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
-                  <XAxis dataKey="week" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: '#334155' }} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#fff' }} />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                  <XAxis dataKey="week" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    cursor={{ fill: 'var(--muted)', opacity: 0.5 }}
+                    contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--foreground)', fontSize: '13px' }}
+                  />
+                  <Bar dataKey="count" fill="oklch(0.47 0.102 220)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* Top Speakers Chart */}
-          <div className="gsap-chart rounded-2xl border border-white/10 bg-slate-800/50 p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-white">Top Speakers</h3>
-            <p className="mb-6 text-sm text-slate-400">By total word count</p>
+          <div className="gsap-chart" style={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: 'var(--card)', padding: '1.5rem', boxShadow: 'var(--shadow-panel)' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 4px' }}>Top Speakers</h3>
+            <p style={{ marginBottom: '1.5rem', fontSize: '13px', color: 'var(--muted-foreground)' }}>By total word count</p>
             {data.topSpeakers && data.topSpeakers.length > 0 ? (
-              <div className="h-72 w-full">
+              <div style={{ height: '288px', width: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.topSpeakers} layout="vertical" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" />
-                    <XAxis type="number" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="speakerName" tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 500 }} width={90} axisLine={false} tickLine={false} />
-                    <Tooltip cursor={{ fill: '#334155' }} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#fff' }} />
-                    <Bar dataKey="wordCount" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
+                    <XAxis type="number" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="speakerName" tick={{ fontSize: 12, fill: 'var(--muted-foreground)', fontWeight: 500 }} width={90} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      cursor={{ fill: 'var(--muted)', opacity: 0.5 }}
+                      contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--foreground)', fontSize: '13px' }}
+                    />
+                    <Bar dataKey="wordCount" fill="oklch(0.60 0.12 75)" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="flex h-72 flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-slate-900/50 text-slate-500">
-                <span className="text-3xl mb-2">💬</span>
-                <p>No transcript data yet</p>
+              <div style={{ display: 'flex', height: '288px', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius)', border: '1px dashed var(--border)', backgroundColor: 'var(--muted)', gap: '8px' }}>
+                <span style={{ fontSize: '2rem' }}>💬</span>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '14px', margin: 0 }}>No transcript data yet</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Recent Meetings */}
-        <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-6 shadow-sm overflow-hidden">
-          <h3 className="text-lg font-bold text-white">Recent Meetings</h3>
-          <p className="mb-6 text-sm text-slate-400">Your latest meeting history</p>
-          
+        <div style={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: 'var(--card)', padding: '1.5rem', boxShadow: 'var(--shadow-panel)', overflow: 'hidden' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 4px' }}>Recent Meetings</h3>
+          <p style={{ fontSize: '13px', color: 'var(--muted-foreground)', marginBottom: '1.5rem' }}>Your latest meeting history</p>
+
           {data.recentMeetings && data.recentMeetings.length > 0 ? (
-            <div className="w-full overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-white/10 text-slate-400">
-                  <tr>
-                    <th className="pb-3 font-medium px-4">Title</th>
-                    <th className="pb-3 font-medium px-4">Date</th>
-                    <th className="pb-3 font-medium px-4">Duration</th>
-                    <th className="pb-3 font-medium px-4">Participants</th>
-                    <th className="pb-3 font-medium px-4 text-right">Action</th>
+            <div style={{ width: '100%', overflowX: 'auto' }}>
+              <table style={{ width: '100%', textAlign: 'left', fontSize: '14px', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Title', 'Date', 'Duration', 'Participants', ''].map(h => (
+                      <th key={h} style={{ paddingBottom: '12px', paddingLeft: '12px', fontWeight: 600, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--muted-foreground)' }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody>
                   {data.recentMeetings.map((m, idx) => (
-                    <tr key={idx} className="gsap-meeting-row transition hover:bg-white/5">
-                      <td className="py-4 px-4 font-medium text-white">{m.title}</td>
-                      <td className="py-4 px-4 text-slate-400">{new Date(m.createdAt).toLocaleDateString()}</td>
-                      <td className="py-4 px-4 text-slate-400">
-                        {m.startedAt && m.endedAt ? `${Math.round((new Date(m.endedAt).getTime() - new Date(m.startedAt).getTime()) / 60000)} mins` : '-'}
+                    <tr
+                      key={idx}
+                      className="gsap-meeting-row"
+                      style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.12s' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--muted)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = ''; }}
+                    >
+                      <td style={{ padding: '14px 12px', fontWeight: 600 }}>{m.title}</td>
+                      <td style={{ padding: '14px 12px', color: 'var(--muted-foreground)' }}>{new Date(m.createdAt).toLocaleDateString()}</td>
+                      <td style={{ padding: '14px 12px', color: 'var(--muted-foreground)' }}>
+                        {m.startedAt && m.endedAt ? `${Math.round((new Date(m.endedAt) - new Date(m.startedAt)) / 60000)} mins` : '—'}
                       </td>
-                      <td className="py-4 px-4 text-slate-400">
-                        <span className="inline-flex items-center rounded-full bg-slate-700/50 border border-white/10 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+                      <td style={{ padding: '14px 12px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', borderRadius: '9999px', border: '1px solid var(--border)', backgroundColor: 'var(--muted)', padding: '2px 10px', fontSize: '12px', fontWeight: 500, color: 'var(--muted-foreground)' }}>
                           {m.participantCount} users
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-right">
+                      <td style={{ padding: '14px 12px', textAlign: 'right' }}>
                         <button
                           onClick={() => navigate(`/meeting/${m.roomCode}`)}
-                          className="inline-flex items-center rounded-lg border border-blue-500/50 px-3 py-1.5 text-xs font-semibold text-blue-400 transition hover:bg-blue-500 hover:text-white"
+                          style={{ display: 'inline-flex', alignItems: 'center', borderRadius: '8px', border: '1px solid var(--border)', padding: '5px 14px', fontSize: '12px', fontWeight: 600, color: 'var(--primary)', backgroundColor: 'var(--background)', cursor: 'pointer', transition: 'background 0.12s, color 0.12s' }}
+                          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary-foreground)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--background)'; e.currentTarget.style.color = 'var(--primary)'; }}
                         >
                           View
                         </button>
@@ -290,9 +283,9 @@ export default function Analytics() {
               </table>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-slate-900/50 py-12 text-slate-500">
-              <span className="text-3xl mb-2">📁</span>
-              <p>No meetings recorded yet</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius)', border: '1px dashed var(--border)', backgroundColor: 'var(--muted)', padding: '3rem 1rem', gap: '8px' }}>
+              <span style={{ fontSize: '2rem' }}>📁</span>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: '14px', margin: 0 }}>No meetings recorded yet</p>
             </div>
           )}
         </div>

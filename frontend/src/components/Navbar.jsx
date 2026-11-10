@@ -13,70 +13,80 @@ export default function Navbar() {
       await logout();
       toast.success('Logged out successfully');
       navigate('/');
-    } catch (err) {
+    } catch {
       toast.error('Failed to logout');
     }
   };
 
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/10 bg-slate-800/50 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-        
-        {/* Left side: App name */}
-        <Link 
-          to="/dashboard" 
-          className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-xl font-bold text-transparent"
+    <header style={{ borderBottom: '1px solid var(--topbar-border)', backgroundColor: 'var(--topbar)', color: 'var(--topbar-foreground)', position: 'sticky', top: 0, zIndex: 50 }}>
+      <div style={{ margin: '0 auto', display: 'grid', minHeight: '76px', width: '100%', maxWidth: '1320px', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '1rem', padding: '0 2.5rem' }}>
+
+        {/* Logo */}
+        <Link
+          to="/dashboard"
+          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', minWidth: 0 }}
         >
-          Meeting Copilot
+          <span style={{ display: 'grid', width: '40px', height: '40px', flexShrink: 0, placeItems: 'center', borderRadius: '8px', backgroundColor: 'var(--brand-mark)', color: 'var(--brand-mark-foreground)' }}>
+            {/* Waves icon */}
+            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+            </svg>
+          </span>
+          <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--topbar-foreground)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            Meeting Copilot
+          </span>
         </Link>
 
-        {/* Center: Navigation Links */}
-        <div className="hidden md:flex items-center space-x-2">
+        {/* Nav links */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <Link
             to="/dashboard"
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-              isActive('/dashboard') 
-                ? 'bg-white/10 text-white' 
-                : 'text-slate-400 hover:bg-white/5 hover:text-white'
-            }`}
+            style={{
+              padding: '6px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, textDecoration: 'none', transition: 'background 0.15s',
+              backgroundColor: isActive('/dashboard') ? 'var(--topbar-selected)' : 'transparent',
+              color: isActive('/dashboard') ? 'var(--topbar-selected-foreground)' : 'var(--topbar-muted)',
+            }}
           >
             Dashboard
           </Link>
           <Link
             to="/analytics"
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-              isActive('/analytics') 
-                ? 'bg-white/10 text-white' 
-                : 'text-slate-400 hover:bg-white/5 hover:text-white'
-            }`}
+            style={{
+              padding: '6px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, textDecoration: 'none', transition: 'background 0.15s',
+              backgroundColor: isActive('/analytics') ? 'var(--topbar-selected)' : 'transparent',
+              color: isActive('/analytics') ? 'var(--topbar-selected-foreground)' : 'var(--topbar-muted)',
+            }}
           >
             Analytics
           </Link>
-        </div>
+        </nav>
 
-        {/* Right side: User Profile & Logout */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
-              {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
-            </div>
-            <span className="hidden sm:block text-sm text-slate-300">
-              {user?.name}
-            </span>
-          </div>
+        {/* User area */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <span style={{ display: 'grid', width: '36px', height: '36px', placeItems: 'center', borderRadius: '50%', backgroundColor: 'var(--avatar)', color: 'var(--avatar-foreground)', fontSize: '14px', fontWeight: 600, flexShrink: 0 }}>
+            {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
+          </span>
+          <span style={{ fontSize: '14px', color: 'var(--topbar-muted)' }}>{user?.name}</span>
+          <span style={{ width: '1px', height: '20px', backgroundColor: 'var(--topbar-border)' }} />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '9999px', border: '1px solid var(--online-border)', backgroundColor: 'var(--online)', padding: '4px 10px', fontSize: '12px', fontWeight: 500, color: 'var(--online-foreground)' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--online-dot)', flexShrink: 0 }} />
+            Online
+          </span>
           <button
             onClick={handleLogout}
-            className="rounded-lg px-3 py-1 text-sm text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+            style={{ padding: '4px 12px', borderRadius: '8px', fontSize: '13px', color: 'var(--topbar-muted)', background: 'none', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--topbar-foreground)'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = 'var(--topbar-muted)'; }}
           >
             Logout
           </button>
         </div>
-        
       </div>
-    </nav>
+    </header>
   );
 }

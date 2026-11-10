@@ -57,8 +57,8 @@ export const AuthProvider = ({ children }) => {
   // Prevent flashing the login page on hard refresh while checking session
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center text-xl font-semibold text-gray-700">
-        Loading...
+      <div style={{ display: 'flex', height: '100vh', width: '100%', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: 600, backgroundColor: 'var(--background)', color: 'var(--muted-foreground)' }}>
+        Loading…
       </div>
     );
   }
